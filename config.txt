@@ -1,5 +1,5 @@
 # number of nodes in the system
-5
+7
 # nodeUID hostName listeningPort
 5   	10.176.69.33  	5234
 200     10.176.69.34  	6213
