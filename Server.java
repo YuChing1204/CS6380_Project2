@@ -27,6 +27,8 @@ public class Server extends Thread {
 
             if (received_message.getType() == Message.MessageType.LOGIN){
                 // System.out.println("Send from " + received_message.getSender());
+            } else {
+                node.processMessage(received_message);
             }
 
             ois.close();

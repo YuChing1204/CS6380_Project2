@@ -6,6 +6,7 @@ public class Message implements Serializable {
 
     private int senderUID;
 	private int receiverUID;
+    private int leader;
 	private MessageType type;
 
     public enum MessageType {
@@ -30,13 +31,22 @@ public class Message implements Serializable {
         return senderUID;
     }
 
+    public int getReceiver() {
+        return receiverUID;
+    }
+
+    public int getLeader() {
+        return leader;
+    }
+
     public Message() {
     }
 
-    public Message(int senderUID, int receiverUID, MessageType type) {
+    public Message(int senderUID, int receiverUID, MessageType type, int leader) {
         this.senderUID = senderUID;
         this.receiverUID = receiverUID;
         this.type = type;
+        this.leader = leader;
     }
     
 }

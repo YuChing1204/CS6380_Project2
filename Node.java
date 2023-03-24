@@ -20,6 +20,9 @@ class Node {
 	private Set<String> loginMessages;
 	private Boolean loginComplete;
 	public int numOfNode;
+    private SynchGHS mstTree;
+    private List<Integer> children;
+    private Integer numOfChildren;
 
 	class NodeLookup {
 		HashMap<String, List<String>> addressMap;
@@ -65,12 +68,12 @@ class Node {
 		edgesMap = nodeLookup.edgesMap;
 	}
 
-	public synchronized void broadcast(String type) {
+	public synchronized void broadcast(Message.MessageType type) {
 		for (int i=0; i < numOfNeighbors; i++){
             String neighbor = neighbors.get(i);
             String hostName = addressMap.get(neighbor).get(0);
             String port = addressMap.get(neighbor).get(1);
-			Message message = new Message(nodeUID, Integer.parseInt(neighbor), Message.MessageType.LOGIN);
+			Message message = new Message(nodeUID, Integer.parseInt(neighbor), type, mstTree.getLeader());
 
 			try (Socket s = new Socket(hostName, Integer.parseInt(port))) {
 				ObjectOutputStream object = new ObjectOutputStream(s.getOutputStream());
@@ -85,10 +88,63 @@ class Node {
         }
 	}
 
+    public synchronized void broadcastChildren(Message.MessageType type) {
+        numOfChildren = mstTree.getChildren().size();
+        children = mstTree.getChildren();
+		for (int i=0; i < numOfChildren; i++){
+            String child = String.valueOf(children.get(i));
+            String hostName = addressMap.get(child).get(0);
+            String port = addressMap.get(child).get(1);
+			Message message = new Message(nodeUID, Integer.parseInt(child), type, mstTree.getLeader());
+
+			try (Socket s = new Socket(hostName, Integer.parseInt(port))) {
+				ObjectOutputStream object = new ObjectOutputStream(s.getOutputStream());
+				object.writeObject(message);
+				object.close();
+                s.close();
+
+            } catch(IOException e){
+                System.out.println("client " + e);
+            }
+        }
+	}
+
+    public synchronized void sendDirectMessage(int receiver, Message.MessageType type){
+        String node = String.valueOf(receiver);
+        String hostName = addressMap.get(node).get(0);
+        String port = addressMap.get(node).get(1);
+		Message message = new Message(nodeUID, receiver, type, mstTree.getLeader());
+
+        try (Socket s = new Socket(hostName, Integer.parseInt(port))) {
+            ObjectOutputStream object = new ObjectOutputStream(s.getOutputStream());
+            object.writeObject(message);
+            object.close();
+            s.close();
+
+        } catch(IOException e){
+            System.out.println("client " + e);
+        }
+    }
+
+    public synchronized void startSynchGHS(){
+        System.out.println("********** startSynchGHS ***************");
+        if (mstTree.getLeader() == nodeUID & mstTree.level == 0) {
+            broadcast(Message.MessageType.MWOE_TEST);
+        } else if (mstTree.getLeader() == nodeUID){
+            broadcastChildren(Message.MessageType.MWOE_SEARCH);
+        }        
+    }
+
+    public synchronized void processMessage(Message message){
+        mstTree.runAlgo(message);
+    }
+
 	private void init() {
+        mstTree = new SynchGHS(this);
+
 		//login
 		while (loginMessages.size() < neighbors.size()) {
-			broadcast("login");
+			broadcast(Message.MessageType.LOGIN);
 			try {
 				Thread.sleep(5000);
 			} catch(InterruptedException err){
@@ -112,6 +168,7 @@ class Node {
         server.start();
 
 		node.init();
+        node.startSynchGHS();
     }
     
 }

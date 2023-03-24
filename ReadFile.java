@@ -57,11 +57,9 @@ public class ReadFile {
             largerUID = data.split("\\s+")[0].split(",")[1].replace(")", "");;
 
             if (neighborsMap.get(smallerUID) == null){
-                System.out.println("neighborsMap.get(smallerUID) == null) ");
                 neighbors.add(largerUID);
                 neighborsMap.put(smallerUID, neighbors);
             }else{
-                System.out.println("neighborsMap.get(smallerUID) != null) ");
                 neighborsMap.get(smallerUID).add(largerUID);
             }
 
@@ -92,10 +90,10 @@ public class ReadFile {
 
     // System.out.println(numOfNode);
     // System.out.println(indexUIDMap);
-    System.out.println(addressMap);
-    System.out.println(neighborsMap);
-    System.out.println(edgesMap);
-    System.out.println(infoMapList);
+    // System.out.println(addressMap);
+    // System.out.println(neighborsMap);
+    // System.out.println(edgesMap);
+    // System.out.println(infoMapList);
 
     return infoMapList;
 }
