@@ -84,8 +84,8 @@ public class SynchGHS {
 
                 test_edges.keySet().forEach((key) -> {
                     if (test_edges.get(key) < mwoeWeight) {
-                        mwoeWeight = test_edges.get(key);
-                        mwoeEdge = key;
+                        int mwoeWeight1 = test_edges.get(key);
+                        List<Integer> mwoeEdge1 = key;
                     }
               });
               numOfReceovedTest = 0;
