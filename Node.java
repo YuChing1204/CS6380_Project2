@@ -110,9 +110,9 @@ class Node {
 	}
 
     public synchronized void sendDirectMessage(int receiver, Message.MessageType type){
-        String node = String.valueOf(receiver);
-        String hostName = addressMap.get(node).get(0);
-        String port = addressMap.get(node).get(1);
+        String receiverNode = String.valueOf(receiver);
+        String hostName = addressMap.get(receiverNode).get(0);
+        String port = addressMap.get(receiverNode).get(1);
 		Message message = new Message(nodeUID, receiver, type, mstTree.getLeader());
 
         try (Socket s = new Socket(hostName, Integer.parseInt(port))) {

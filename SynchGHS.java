@@ -15,10 +15,11 @@ public class SynchGHS {
     private List<Integer> children;
     private int parent;
     public int level;
-    private int numOfReceovedTest;
+    private int numOfReceivedTest, numOfReceivedComplete;
     private List<Integer> test_edge;
     private List<Integer> test_weight;
     private HashMap<List<Integer>, Integer> test_edges = new HashMap<>();
+    public HashMap<List<Integer>, Integer> mwoe_edges = new HashMap<>();
     private String edge;
     private int weight;
 
@@ -37,13 +38,16 @@ public class SynchGHS {
         this.children = new ArrayList<>();
         this.level = 0;
         this.leader = node.nodeUID;
-        this.numOfReceovedTest = 0;
+        this.numOfReceivedTest = 0;
+        this.numOfReceivedComplete = 0;
         this.test_edge = new ArrayList<>();
         this.test_weight = new ArrayList<>();
+        this.parent = -1;
     }
 
     public void runAlgo(Message message){
         if (message.getType() == Message.MessageType.MWOE_SEARCH){
+            System.out.println("message.getType() == Message.MessageType.MWOE_SEARCH");
             if (children.size() != 0){
                 node.broadcastChildren(Message.MessageType.MWOE_SEARCH);
             } else {
@@ -52,6 +56,7 @@ public class SynchGHS {
         }
 
         if (message.getType() == Message.MessageType.MWOE_TEST) {
+            System.out.println("message.getType() == Message.MessageType.MWOE_TEST");
             if (message.getLeader() == leader) {
                 node.sendDirectMessage(message.getSender(), Message.MessageType.MWOE_TEST_REJECT);
             } else {
@@ -60,9 +65,10 @@ public class SynchGHS {
         }
 
         if (message.getType() == Message.MessageType.MWOE_TEST_ACCPET || message.getType() == Message.MessageType.MWOE_TEST_REJECT){
-            numOfReceovedTest += 1;
-
+            numOfReceivedTest += 1;
+            System.out.println("message.getType() == Message.MessageType.MWOE_TEST_ACCPET || message.getType() == Message.MessageType.MWOE_TEST_REJECT");
             if (message.getType() == Message.MessageType.MWOE_TEST_ACCPET){
+                System.out.println("message.getType() == Message.MessageType.MWOE_TEST_ACCPET");
                 if (message.getSender() > node.nodeUID) {
                     edge = "("+ String.valueOf(node.nodeUID) +","+ String.valueOf(message.getSender()) +")";
                     weight = Integer.parseInt(node.edgesMap.get(edge).get(0));
@@ -78,27 +84,37 @@ public class SynchGHS {
                 }
             }
 
-            if (numOfReceovedTest == node.neighbors.size()){
+            if (numOfReceivedTest == node.neighbors.size()){
                 int mwoeWeight = Integer.MAX_VALUE;
-                List<Integer> mwoeEdge;
+                List<Integer> mwoeEdge = new ArrayList<>();
 
                 test_edges.keySet().forEach((key) -> {
                     if (test_edges.get(key) < mwoeWeight) {
                         int mwoeWeight1 = test_edges.get(key);
                         List<Integer> mwoeEdge1 = key;
                     }
-              });
-              numOfReceovedTest = 0;
+                });
+                mwoe_edges.put(mwoeEdge, mwoeWeight);
+                numOfReceivedTest = 0;
             }
 
-            node.sendDirectMessage(parent, Message.MessageType.MWOE_COMPLETE);
+            if (node.nodeUID == leader){
+                node.broadcastChildren(Message.MessageType.GHS_MERGE);
+            } else {
+                node.sendDirectMessage(parent, Message.MessageType.MWOE_COMPLETE);
+            }
         }
 
         if (message.getType() == Message.MessageType.MWOE_COMPLETE){
-            if (message.getLeader() != node.nodeUID){
+            numOfReceivedComplete += 1;
+            System.out.println("message.getType() == Message.MessageType.MWOE_COMPLETE");
+            if (leader != node.nodeUID){
                 node.sendDirectMessage(parent, Message.MessageType.MWOE_COMPLETE);
             } else {
-                node.broadcastChildren(Message.MessageType.GHS_MERGE);
+                if (numOfReceivedComplete == node.neighbors.size()) {
+                    node.broadcastChildren(Message.MessageType.GHS_MERGE);
+                    numOfReceivedComplete = 0;
+                }
             }
         }
         
