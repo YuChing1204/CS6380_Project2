@@ -145,9 +145,29 @@ public class SynchGHS {
             }
         }
 
-        // if (message.getType() == Message.MessageType.GHS_MERGE) {
-            
-        // }
+        if (message.getType() == Message.MessageType.GHS_MERGE) {
+            System.out.println("message.getType() == Message.MessageType.GHS_MERGE");
+            int mergeNode;
+            if (node.neighbors.contains(String.valueOf(message.getMwoeEdge().get(0))) || node.neighbors.contains(String.valueOf(message.getMwoeEdge().get(1)))) {
+                if (message.getMwoeEdge().get(0) == node.nodeUID){
+                    mergeNode = message.getMwoeEdge().get(1);
+                } else {
+                    mergeNode = message.getMwoeEdge().get(0);
+                }
+                node.sendDirectMessage(mergeNode, Message.MessageType.GHS_MERGE_REQUEST);
+            } else {
+                node.broadcastChildren(Message.MessageType.GHS_MERGE);
+            }
+        }
+
+        if (message.getType() == Message.MessageType.GHS_MERGE_REQUEST) {
+            System.out.println("message.getType() == Message.MessageType.GHS_MERGE_REQUEST");
+            if (message.getLeader() != leader){
+                node.sendDirectMessage(message.getSender(), Message.MessageType.GHS_MERGE_ACCPET);
+            } else {
+                node.sendDirectMessage(message.getSender(), Message.MessageType.GHS_MERGE_REJECT);
+            }
+        }
         
     }
     
