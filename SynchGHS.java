@@ -15,7 +15,7 @@ public class SynchGHS {
     private List<Integer> children;
     private int parent;
     public int level;
-    private int numOfReceivedTest, numOfReceivedComplete;
+    private int numOfReceivedTest, numOfReceivedComplete, numOfReceivedFinish;
     private List<Integer> test_edge;
     private List<Integer> test_weight;
     private HashMap<List<Integer>, Integer> test_edges = new HashMap<>();
@@ -23,6 +23,7 @@ public class SynchGHS {
     public List<List<Integer>> mwoe_edge_list = new ArrayList<>();
     private String edge;
     private int weight;
+    private int mergeNode;
 
     public int getLeader(){
         return leader;
@@ -109,10 +110,11 @@ public class SynchGHS {
 
                 if (node.nodeUID == leader){
                     if (mwoe_edge.get(0) == node.nodeUID) {
-                        node.sendDirectMessage(mwoe_edge.get(1), Message.MessageType.GHS_MERGE_REQUEST);
+                        mergeNode = mwoe_edge.get(1);
                     } else {
-                        node.sendDirectMessage(mwoe_edge.get(0), Message.MessageType.GHS_MERGE_REQUEST);
+                        mergeNode = mwoe_edge.get(0);
                     }
+                    node.sendDirectMessage(mergeNode, Message.MessageType.GHS_MERGE_REQUEST);
                 } else {
                     node.sendDirectMessage(parent, Message.MessageType.MWOE_COMPLETE);
                 }
@@ -147,7 +149,7 @@ public class SynchGHS {
 
         if (message.getType() == Message.MessageType.GHS_MERGE) {
             System.out.println("message.getType() == Message.MessageType.GHS_MERGE");
-            int mergeNode;
+            mergeNode = -1;
             if (node.neighbors.contains(String.valueOf(message.getMwoeEdge().get(0))) || node.neighbors.contains(String.valueOf(message.getMwoeEdge().get(1)))) {
                 if (message.getMwoeEdge().get(0) == node.nodeUID){
                     mergeNode = message.getMwoeEdge().get(1);
@@ -167,6 +169,87 @@ public class SynchGHS {
             } else {
                 node.sendDirectMessage(message.getSender(), Message.MessageType.GHS_MERGE_REJECT);
             }
+        }
+        
+        if (message.getType() == Message.MessageType.GHS_MERGE_ACCPET || message.getType() == Message.MessageType.GHS_MERGE_REJECT) {
+            if (message.getType() == Message.MessageType.GHS_MERGE_ACCPET) {
+                System.out.println("message.getType() == Message.MessageType.GHS_MERGE_ACCPET");
+                System.out.println("leader, message.getLeader()" + leader + ", " + message.getLeader());
+                System.out.println("message.getSender(), mergeNode " + message.getSender() + " , " + mergeNode);
+                if (message.getSender() == mergeNode) {
+                    if (leader > message.getLeader()) {
+                        System.out.println("leader > message.getLeader()");
+                        node.sendDirectMessage(message.getSender(), Message.MessageType.GHS_UPDATE_LEADER_REVERSE);
+                        children.add(mergeNode);
+                    }
+                }
+            } 
+        }
+
+        if (message.getType() == Message.MessageType.GHS_UPDATE_LEADER_REVERSE) {
+            System.out.println("message.getType() == Message.MessageType.GHS_UPDATE_LEADER_REVERSE");
+            mergeNode = node.nodeUID;
+            if (leader != node.nodeUID) {
+                System.out.println("leader != node.nodeUID");
+                leader = message.getLeader();
+                if (children.contains(message.getSender())) {
+                    children.remove(message.getSender());
+                }
+                node.sendDirectMessage(parent, Message.MessageType.GHS_UPDATE_LEADER_REVERSE);
+                if (children.size() != 0) {
+                    node.broadcastChildren(Message.MessageType.GHS_UPDATE_LEADER);
+                }
+                children.add(parent);
+                parent = message.getSender();
+            } else {
+                System.out.println("leader = node.nodeUID");
+                System.out.println("children: " + children);
+                leader = message.getLeader();
+                parent = message.getSender();
+
+                if (children.contains(message.getSender())) {
+                    children.remove(message.getSender());
+                }
+                if (children.size() != 0) {
+                    System.out.println("children.size() != 0");
+                    node.broadcastChildren(Message.MessageType.GHS_UPDATE_LEADER);
+                } else {
+                    System.out.println("children.size() = 0");
+                    System.out.println("mergeNode, node.nodeUID " + mergeNode + ", " + node.nodeUID);
+                    System.out.println("parent: " + parent);
+                    if (mergeNode == node.nodeUID) {
+                        System.out.println("mergeNode == node.nodeUID");
+                        node.sendDirectMessage(parent, Message.MessageType.GHS_ROUND_FINISH);
+                    }
+                }
+            }
+        }
+
+        if (message.getType() == Message.MessageType.GHS_UPDATE_LEADER) {
+            System.out.println("message.getType() == Message.MessageType.GHS_UPDATE_LEADER");
+            leader = message.getLeader();
+            if (children.size() != 0) {
+                node.broadcastChildren(Message.MessageType.GHS_UPDATE_LEADER);
+            } else {
+                node.sendDirectMessage(parent, Message.MessageType.GHS_UPDATE_FINISH);
+            }
+        }
+
+        if (message.getType() == Message.MessageType.GHS_UPDATE_FINISH) {
+            System.out.println("message.getType() == Message.MessageType.GHS_UPDATE_FINISH");
+            numOfReceivedFinish += 1;
+            if (numOfReceivedFinish == children.size() - 1){
+                if (mergeNode != node.nodeUID) {
+                    node.sendDirectMessage(parent, Message.MessageType.GHS_UPDATE_FINISH);
+                } else {
+                    node.sendDirectMessage(parent, Message.MessageType.GHS_ROUND_FINISH);
+                }
+            }
+        }
+
+        if (message.getType() == Message.MessageType.GHS_ROUND_FINISH) {
+            System.out.println("round finish");
+            System.out.println("children" + children);
         }
         
     }
