@@ -1,6 +1,8 @@
 package node;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.List;
 
 public class Message implements Serializable {
 
@@ -8,6 +10,7 @@ public class Message implements Serializable {
 	private int receiverUID;
     private int leader;
 	private MessageType type;
+    private List<Integer> mwoe_edge;
 
     public enum MessageType {
         LOGIN,
@@ -39,14 +42,19 @@ public class Message implements Serializable {
         return leader;
     }
 
+    public List<Integer> getMwoeEdge() {
+        return mwoe_edge;
+    }
+
     public Message() {
     }
 
-    public Message(int senderUID, int receiverUID, MessageType type, int leader) {
+    public Message(int senderUID, int receiverUID, MessageType type, int leader, List<Integer> mwoe_edge) {
         this.senderUID = senderUID;
         this.receiverUID = receiverUID;
         this.type = type;
         this.leader = leader;
+        this.mwoe_edge = mwoe_edge;
     }
     
 }

@@ -73,7 +73,7 @@ class Node {
             String neighbor = neighbors.get(i);
             String hostName = addressMap.get(neighbor).get(0);
             String port = addressMap.get(neighbor).get(1);
-			Message message = new Message(nodeUID, Integer.parseInt(neighbor), type, mstTree.getLeader());
+			Message message = new Message(nodeUID, Integer.parseInt(neighbor), type, mstTree.getLeader(), mstTree.getMwoeEdge());
 
 			try (Socket s = new Socket(hostName, Integer.parseInt(port))) {
 				ObjectOutputStream object = new ObjectOutputStream(s.getOutputStream());
@@ -95,7 +95,7 @@ class Node {
             String child = String.valueOf(children.get(i));
             String hostName = addressMap.get(child).get(0);
             String port = addressMap.get(child).get(1);
-			Message message = new Message(nodeUID, Integer.parseInt(child), type, mstTree.getLeader());
+			Message message = new Message(nodeUID, Integer.parseInt(child), type, mstTree.getLeader(), mstTree.getMwoeEdge());
 
 			try (Socket s = new Socket(hostName, Integer.parseInt(port))) {
 				ObjectOutputStream object = new ObjectOutputStream(s.getOutputStream());
@@ -113,7 +113,7 @@ class Node {
         String receiverNode = String.valueOf(receiver);
         String hostName = addressMap.get(receiverNode).get(0);
         String port = addressMap.get(receiverNode).get(1);
-		Message message = new Message(nodeUID, receiver, type, mstTree.getLeader());
+		Message message = new Message(nodeUID, receiver, type, mstTree.getLeader(), mstTree.getMwoeEdge());
 
         try (Socket s = new Socket(hostName, Integer.parseInt(port))) {
             ObjectOutputStream object = new ObjectOutputStream(s.getOutputStream());
