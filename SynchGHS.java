@@ -51,14 +51,25 @@ public class SynchGHS {
         this.parent = -1;
     }
 
+    public void startSearch() {
+        if (children.size() != 0){
+            node.broadcastChildren(Message.MessageType.MWOE_SEARCH);
+        }
+
+        List<Integer> outgoingNeighbours = new ArrayList<>();
+        for (Integer neighbour: this.node.neighbors) {
+            if (!children.contains(neighbour) && neighbour != parent) {
+                outgoingNeighbours.add(neighbour);
+            }
+        }
+
+        node.broadcast(Message.MessageType.MWOE_TEST, outgoingNeighbours);
+    }
+
     public void runAlgo(Message message){
         if (message.getType() == Message.MessageType.MWOE_SEARCH){
             System.out.println("message.getType() == Message.MessageType.MWOE_SEARCH");
-            if (children.size() != 0){
-                node.broadcastChildren(Message.MessageType.MWOE_SEARCH);
-            } else {
-                node.broadcast(Message.MessageType.MWOE_TEST);
-            }
+            this.startSearch();
         }
 
         if (message.getType() == Message.MessageType.MWOE_TEST) {
@@ -104,6 +115,7 @@ public class SynchGHS {
                 }
 
                 mwoe_edge.add(mwoeWeight);
+                mwoe_edge_list.add(mwoe_edge);
                 numOfReceivedTest = 0;
 
                 System.out.println("mwoeEdge: " + mwoe_edge);
@@ -114,7 +126,9 @@ public class SynchGHS {
                     } else {
                         mergeNode = mwoe_edge.get(0);
                     }
-                    node.sendDirectMessage(mergeNode, Message.MessageType.GHS_MERGE_REQUEST);
+                    if (children.size() == 0) {
+                        node.sendDirectMessage(mergeNode, Message.MessageType.GHS_MERGE_REQUEST);
+                    }
                 } else {
                     node.sendDirectMessage(parent, Message.MessageType.MWOE_COMPLETE);
                 }
@@ -129,21 +143,23 @@ public class SynchGHS {
             if (message.getMwoeEdge().size() != 0) {
                 mwoe_edge_list.add(message.getMwoeEdge());
             }
-            
-            if (leader != node.nodeUID){
-                node.sendDirectMessage(parent, Message.MessageType.MWOE_COMPLETE);
-            } else {
-                if (numOfReceivedComplete == node.neighbors.size()) {
-                    for (List<Integer> edge: mwoe_edge_list) {
-                        int weight = edge.get(2);
-                        if (weight < mwoeWeight){
-                            mwoeWeight = weight;
-                            mwoe_edge = edge;
-                        }
+
+            if (numOfReceivedComplete == children.size()) {
+                for (List<Integer> edge: mwoe_edge_list) {
+                    int weight = edge.get(2);
+                    if (weight < mwoeWeight){
+                        mwoeWeight = weight;
+                        mwoe_edge = edge;
                     }
-                    node.broadcastChildren(Message.MessageType.GHS_MERGE);
-                    numOfReceivedComplete = 0;
                 }
+
+                if (leader != node.nodeUID) {
+                    node.sendDirectMessage(parent, Message.MessageType.MWOE_COMPLETE);
+                } else {
+                    node.broadcastChildren(Message.MessageType.GHS_MERGE);
+                }
+                
+                numOfReceivedComplete = 0;
             }
         }
 
@@ -164,7 +180,13 @@ public class SynchGHS {
 
         if (message.getType() == Message.MessageType.GHS_MERGE_REQUEST) {
             System.out.println("message.getType() == Message.MessageType.GHS_MERGE_REQUEST");
-            if (message.getLeader() != leader){
+            mergeNode = -1;
+            if (mwoe_edge.get(0) == node.nodeUID){
+                mergeNode = mwoe_edge.get(1);
+            } else {
+                mergeNode = mwoe_edge.get(0);
+            }
+            if (message.getLeader() != leader && message.getSender() == mergeNode){
                 node.sendDirectMessage(message.getSender(), Message.MessageType.GHS_MERGE_ACCPET);
             } else {
                 node.sendDirectMessage(message.getSender(), Message.MessageType.GHS_MERGE_REJECT);
@@ -179,11 +201,14 @@ public class SynchGHS {
                 if (message.getSender() == mergeNode) {
                     if (leader > message.getLeader()) {
                         System.out.println("leader > message.getLeader()");
-                        node.sendDirectMessage(message.getSender(), Message.MessageType.GHS_UPDATE_LEADER_REVERSE);
+                        // node.sendDirectMessage(message.getSender(), Message.MessageType.GHS_UPDATE_LEADER_REVERSE);
                         children.add(mergeNode);
+                    } else {
+                        parent = mergeNode;
                     }
                 }
-            } 
+            }
+            System.out.println("leader, parent, children" + leader + ", " + parent + ", " + children);
         }
 
         if (message.getType() == Message.MessageType.GHS_UPDATE_LEADER_REVERSE) {

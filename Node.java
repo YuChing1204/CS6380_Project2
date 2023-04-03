@@ -68,9 +68,9 @@ class Node {
 		edgesMap = nodeLookup.edgesMap;
 	}
 
-	public synchronized void broadcast(Message.MessageType type) {
-		for (int i=0; i < numOfNeighbors; i++){
-            String neighbor = neighbors.get(i);
+	public synchronized void broadcast(Message.MessageType type, List<Integer> outgoingNeighbours) {
+		for (int i=0; i < outgoingNeighbours.size(); i++){
+            String neighbor = outgoingNeighbours.get(i);
             String hostName = addressMap.get(neighbor).get(0);
             String port = addressMap.get(neighbor).get(1);
 			Message message = new Message(nodeUID, Integer.parseInt(neighbor), type, mstTree.getLeader(), mstTree.getMwoeEdge());
@@ -128,11 +128,7 @@ class Node {
 
     public synchronized void startSynchGHS(){
         System.out.println("********** startSynchGHS ***************");
-        if (mstTree.getLeader() == nodeUID & mstTree.level == 0) {
-            broadcast(Message.MessageType.MWOE_TEST);
-        } else if (mstTree.getLeader() == nodeUID){
-            broadcastChildren(Message.MessageType.MWOE_SEARCH);
-        }        
+        this.mstTree.startSearch();       
     }
 
     public synchronized void processMessage(Message message){
@@ -144,7 +140,7 @@ class Node {
 
 		//login
 		while (loginMessages.size() < neighbors.size()) {
-			broadcast(Message.MessageType.LOGIN);
+			broadcast(Message.MessageType.LOGIN, neighbors);
 			try {
 				Thread.sleep(5000);
 			} catch(InterruptedException err){
