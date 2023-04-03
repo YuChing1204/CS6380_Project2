@@ -57,8 +57,9 @@ public class SynchGHS {
         }
 
         List<Integer> outgoingNeighbours = new ArrayList<>();
-        for (Integer neighbour: this.node.neighbors) {
-            if (!children.contains(neighbour) && neighbour != parent) {
+        for (String neighbour: this.node.neighbors) {
+            int neighborInt = Integer.parseInt(neighbour);
+            if (!children.contains(neighborInt) && neighborInt != parent) {
                 outgoingNeighbours.add(neighbour);
             }
         }

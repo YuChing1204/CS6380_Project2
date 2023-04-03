@@ -68,7 +68,7 @@ class Node {
 		edgesMap = nodeLookup.edgesMap;
 	}
 
-	public synchronized void broadcast(Message.MessageType type, List<Integer> outgoingNeighbours) {
+	public synchronized void broadcast(Message.MessageType type, List<String> outgoingNeighbours) {
 		for (int i=0; i < outgoingNeighbours.size(); i++){
             String neighbor = outgoingNeighbours.get(i);
             String hostName = addressMap.get(neighbor).get(0);
