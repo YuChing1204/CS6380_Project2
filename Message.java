@@ -11,6 +11,7 @@ public class Message implements Serializable {
     private int leader;
 	private MessageType type;
     private List<Integer> mwoe_edge;
+    private int level;
 
     public enum MessageType {
         LOGIN,
@@ -26,7 +27,8 @@ public class Message implements Serializable {
         GHS_UPDATE_LEADER_REVERSE,
         GHS_UPDATE_LEADER,
         GHS_UPDATE_FINISH,
-        GHS_ROUND_FINISH
+        GHS_ROUND_FINISH,
+        GHS_UPDATE_LEVEL
     }
 
     public MessageType getType() {
@@ -45,6 +47,10 @@ public class Message implements Serializable {
         return leader;
     }
 
+    public int getLevel() {
+        return level;
+    }
+
     public List<Integer> getMwoeEdge() {
         return mwoe_edge;
     }
@@ -52,12 +58,13 @@ public class Message implements Serializable {
     public Message() {
     }
 
-    public Message(int senderUID, int receiverUID, MessageType type, int leader, List<Integer> mwoe_edge) {
+    public Message(int senderUID, int receiverUID, MessageType type, int leader, List<Integer> mwoe_edge, int level) {
         this.senderUID = senderUID;
         this.receiverUID = receiverUID;
         this.type = type;
         this.leader = leader;
         this.mwoe_edge = mwoe_edge;
+        this.level = level;
     }
     
 }

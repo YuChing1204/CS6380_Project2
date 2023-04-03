@@ -2,10 +2,16 @@ package node;
 
 import java.io.*;
 import java.net.*;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 import java.util.Set;
+
+import node.Message;
+import node.Message.MessageType;
 
 class Node {
 	public int nodeUID;
@@ -23,6 +29,9 @@ class Node {
     private SynchGHS mstTree;
     private List<Integer> children;
     private Integer numOfChildren;
+	public Queue<Message> messageList = new LinkedList<>();
+	public Queue<Message> bufferMessageList = new LinkedList<>();
+	private Queue<Message> removedMessage = new LinkedList<>();
 
 	class NodeLookup {
 		HashMap<String, List<String>> addressMap;
@@ -73,7 +82,7 @@ class Node {
             String neighbor = neighbors.get(i);
             String hostName = addressMap.get(neighbor).get(0);
             String port = addressMap.get(neighbor).get(1);
-			Message message = new Message(nodeUID, Integer.parseInt(neighbor), type, mstTree.getLeader(), mstTree.getMwoeEdge());
+			Message message = new Message(nodeUID, Integer.parseInt(neighbor), type, mstTree.getLeader(), mstTree.getMwoeEdge(), mstTree.getLevel());
 
 			try (Socket s = new Socket(hostName, Integer.parseInt(port))) {
 				ObjectOutputStream object = new ObjectOutputStream(s.getOutputStream());
@@ -95,7 +104,7 @@ class Node {
             String child = String.valueOf(children.get(i));
             String hostName = addressMap.get(child).get(0);
             String port = addressMap.get(child).get(1);
-			Message message = new Message(nodeUID, Integer.parseInt(child), type, mstTree.getLeader(), mstTree.getMwoeEdge());
+			Message message = new Message(nodeUID, Integer.parseInt(child), type, mstTree.getLeader(), mstTree.getMwoeEdge(), mstTree.getLevel());
 
 			try (Socket s = new Socket(hostName, Integer.parseInt(port))) {
 				ObjectOutputStream object = new ObjectOutputStream(s.getOutputStream());
@@ -113,7 +122,7 @@ class Node {
         String receiverNode = String.valueOf(receiver);
         String hostName = addressMap.get(receiverNode).get(0);
         String port = addressMap.get(receiverNode).get(1);
-		Message message = new Message(nodeUID, receiver, type, mstTree.getLeader(), mstTree.getMwoeEdge());
+		Message message = new Message(nodeUID, receiver, type, mstTree.getLeader(), mstTree.getMwoeEdge(), mstTree.getLevel());
 
         try (Socket s = new Socket(hostName, Integer.parseInt(port))) {
             ObjectOutputStream object = new ObjectOutputStream(s.getOutputStream());
@@ -136,7 +145,52 @@ class Node {
     }
 
     public synchronized void processMessage(Message message){
-        mstTree.runAlgo(message);
+		messageList.add(message);
+		while (removedMessage.size() != 0){
+			Message add = removedMessage.remove();
+			messageList.add(add);
+		}
+		if (loginComplete) {
+			while (messageList.size() != 0) {
+				Message curMessage = messageList.remove();
+				System.out.println(messageList.size());
+				System.out.println(curMessage.getType());
+				// mstTree.runAlgo(messageList.remove());
+				if (curMessage.getType() == Message.MessageType.GHS_MERGE_REQUEST){
+					if (mstTree.mergeNode != 0){
+						// System.out.println("curMessage.getLevel(): " + curMessage.getLevel());
+						// System.out.println("mstTree.level: " + mstTree.level);
+						mstTree.runAlgo(curMessage);
+					} else {
+						Message remove = curMessage;
+						removedMessage.add(remove);
+					}
+				} else {
+					// System.out.println("curMessage.getLevel(): " + curMessage.getLevel());
+					// System.out.println("mstTree.level: " + mstTree.level);
+					mstTree.runAlgo(curMessage);
+				}
+			}
+			
+			// while (true) {
+			// 	while (messageList.size() != 0) {
+			// 		Message curMessage = messageList.remove();
+			// 		if (curMessage.getLevel() == mstTree.level) {
+			// 			mstTree.runAlgo(curMessage);
+			// 		} else {
+			// 			bufferMessageList.add(curMessage);
+			// 		}
+			// 	}
+			// 	int size = bufferMessageList.size();
+			// 	if (size == 0){
+			// 		break;
+			// 	}
+			// 	// for (int i = 0; i <= size; i ++){
+			// 	// 	messageList.add(bufferMessageList.remove());
+			// 	// }
+			// 	// startSynchGHS();
+			// }
+		}
     }
 
 	private void init() {
