@@ -151,7 +151,7 @@ class Node {
 
 		loginComplete = true;
 		System.out.println("********* Login complete! ************");
-		System.out.println("loginMessages" + loginMessages);
+		// System.out.println("loginMessages" + loginMessages);
 		System.out.println("neighbors" + neighbors);
 		System.out.println("**************************************");
 	}

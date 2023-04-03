@@ -56,7 +56,7 @@ public class SynchGHS {
             node.broadcastChildren(Message.MessageType.MWOE_SEARCH);
         }
 
-        List<Integer> outgoingNeighbours = new ArrayList<>();
+        List<String> outgoingNeighbours = new ArrayList<>();
         for (String neighbour: this.node.neighbors) {
             int neighborInt = Integer.parseInt(neighbour);
             if (!children.contains(neighborInt) && neighborInt != parent) {
@@ -68,13 +68,15 @@ public class SynchGHS {
     }
 
     public void runAlgo(Message message){
+        System.out.println(message.getType() + "from " + message.getSender());
+
         if (message.getType() == Message.MessageType.MWOE_SEARCH){
-            System.out.println("message.getType() == Message.MessageType.MWOE_SEARCH");
+            // System.out.println("message.getType() == Message.MessageType.MWOE_SEARCH");
             this.startSearch();
         }
 
         if (message.getType() == Message.MessageType.MWOE_TEST) {
-            System.out.println("message.getType() == Message.MessageType.MWOE_TEST");
+            // System.out.println("message.getType() == Message.MessageType.MWOE_TEST");
             if (message.getLeader() == leader) {
                 node.sendDirectMessage(message.getSender(), Message.MessageType.MWOE_TEST_REJECT);
             } else {
@@ -85,9 +87,9 @@ public class SynchGHS {
         if (message.getType() == Message.MessageType.MWOE_TEST_ACCPET || message.getType() == Message.MessageType.MWOE_TEST_REJECT){
             numOfReceivedTest += 1;
             test_edge = new ArrayList<>();
-            System.out.println("message.getType() == Message.MessageType.MWOE_TEST_ACCPET || message.getType() == Message.MessageType.MWOE_TEST_REJECT");
+            // System.out.println("message.getType() == Message.MessageType.MWOE_TEST_ACCPET || message.getType() == Message.MessageType.MWOE_TEST_REJECT");
             if (message.getType() == Message.MessageType.MWOE_TEST_ACCPET){
-                System.out.println("message.getType() == Message.MessageType.MWOE_TEST_ACCPET");
+                // System.out.println("message.getType() == Message.MessageType.MWOE_TEST_ACCPET");
                 if (message.getSender() > node.nodeUID) {
                     edge = "("+ String.valueOf(node.nodeUID) +","+ String.valueOf(message.getSender()) +")";
                     weight = Integer.parseInt(node.edgesMap.get(edge).get(0));
@@ -138,7 +140,7 @@ public class SynchGHS {
         }
 
         if (message.getType() == Message.MessageType.MWOE_COMPLETE) {
-            System.out.println("message.getType() == Message.MessageType.MWOE_COMPLETE");
+            // System.out.println("message.getType() == Message.MessageType.MWOE_COMPLETE");
             int mwoeWeight = Integer.MAX_VALUE;
             numOfReceivedComplete += 1;
             if (message.getMwoeEdge().size() != 0) {
@@ -165,7 +167,7 @@ public class SynchGHS {
         }
 
         if (message.getType() == Message.MessageType.GHS_MERGE) {
-            System.out.println("message.getType() == Message.MessageType.GHS_MERGE");
+            // System.out.println("message.getType() == Message.MessageType.GHS_MERGE");
             mergeNode = -1;
             if (node.neighbors.contains(String.valueOf(message.getMwoeEdge().get(0))) || node.neighbors.contains(String.valueOf(message.getMwoeEdge().get(1)))) {
                 if (message.getMwoeEdge().get(0) == node.nodeUID){
@@ -180,12 +182,12 @@ public class SynchGHS {
         }
 
         if (message.getType() == Message.MessageType.GHS_MERGE_REQUEST) {
-            System.out.println("message.getType() == Message.MessageType.GHS_MERGE_REQUEST");
+            // System.out.println("message.getType() == Message.MessageType.GHS_MERGE_REQUEST");
             mergeNode = -1;
-            if (mwoe_edge.get(0) == node.nodeUID){
-                mergeNode = mwoe_edge.get(1);
+            if (message.getMwoeEdge().get(0) == node.nodeUID){
+                mergeNode = message.getMwoeEdge().get(1);
             } else {
-                mergeNode = mwoe_edge.get(0);
+                mergeNode = message.getMwoeEdge().get(0);
             }
             if (message.getLeader() != leader && message.getSender() == mergeNode){
                 node.sendDirectMessage(message.getSender(), Message.MessageType.GHS_MERGE_ACCPET);
@@ -196,12 +198,12 @@ public class SynchGHS {
         
         if (message.getType() == Message.MessageType.GHS_MERGE_ACCPET || message.getType() == Message.MessageType.GHS_MERGE_REJECT) {
             if (message.getType() == Message.MessageType.GHS_MERGE_ACCPET) {
-                System.out.println("message.getType() == Message.MessageType.GHS_MERGE_ACCPET");
-                System.out.println("leader, message.getLeader()" + leader + ", " + message.getLeader());
-                System.out.println("message.getSender(), mergeNode " + message.getSender() + " , " + mergeNode);
+                // System.out.println("message.getType() == Message.MessageType.GHS_MERGE_ACCPET");
+                // System.out.println("leader, message.getLeader()" + leader + ", " + message.getLeader());
+                // System.out.println("message.getSender(), mergeNode " + message.getSender() + " , " + mergeNode);
                 if (message.getSender() == mergeNode) {
                     if (leader > message.getLeader()) {
-                        System.out.println("leader > message.getLeader()");
+                        // System.out.println("leader > message.getLeader()");
                         // node.sendDirectMessage(message.getSender(), Message.MessageType.GHS_UPDATE_LEADER_REVERSE);
                         children.add(mergeNode);
                     } else {
@@ -213,10 +215,10 @@ public class SynchGHS {
         }
 
         if (message.getType() == Message.MessageType.GHS_UPDATE_LEADER_REVERSE) {
-            System.out.println("message.getType() == Message.MessageType.GHS_UPDATE_LEADER_REVERSE");
+            // System.out.println("message.getType() == Message.MessageType.GHS_UPDATE_LEADER_REVERSE");
             mergeNode = node.nodeUID;
             if (leader != node.nodeUID) {
-                System.out.println("leader != node.nodeUID");
+                // System.out.println("leader != node.nodeUID");
                 leader = message.getLeader();
                 if (children.contains(message.getSender())) {
                     children.remove(message.getSender());
@@ -228,8 +230,8 @@ public class SynchGHS {
                 children.add(parent);
                 parent = message.getSender();
             } else {
-                System.out.println("leader = node.nodeUID");
-                System.out.println("children: " + children);
+                // System.out.println("leader = node.nodeUID");
+                // System.out.println("children: " + children);
                 leader = message.getLeader();
                 parent = message.getSender();
 
@@ -237,14 +239,14 @@ public class SynchGHS {
                     children.remove(message.getSender());
                 }
                 if (children.size() != 0) {
-                    System.out.println("children.size() != 0");
+                    // System.out.println("children.size() != 0");
                     node.broadcastChildren(Message.MessageType.GHS_UPDATE_LEADER);
                 } else {
-                    System.out.println("children.size() = 0");
-                    System.out.println("mergeNode, node.nodeUID " + mergeNode + ", " + node.nodeUID);
-                    System.out.println("parent: " + parent);
+                    // System.out.println("children.size() = 0");
+                    // System.out.println("mergeNode, node.nodeUID " + mergeNode + ", " + node.nodeUID);
+                    // System.out.println("parent: " + parent);
                     if (mergeNode == node.nodeUID) {
-                        System.out.println("mergeNode == node.nodeUID");
+                        // System.out.println("mergeNode == node.nodeUID");
                         node.sendDirectMessage(parent, Message.MessageType.GHS_ROUND_FINISH);
                     }
                 }
@@ -252,7 +254,7 @@ public class SynchGHS {
         }
 
         if (message.getType() == Message.MessageType.GHS_UPDATE_LEADER) {
-            System.out.println("message.getType() == Message.MessageType.GHS_UPDATE_LEADER");
+            // System.out.println("message.getType() == Message.MessageType.GHS_UPDATE_LEADER");
             leader = message.getLeader();
             if (children.size() != 0) {
                 node.broadcastChildren(Message.MessageType.GHS_UPDATE_LEADER);
@@ -262,7 +264,7 @@ public class SynchGHS {
         }
 
         if (message.getType() == Message.MessageType.GHS_UPDATE_FINISH) {
-            System.out.println("message.getType() == Message.MessageType.GHS_UPDATE_FINISH");
+            // System.out.println("message.getType() == Message.MessageType.GHS_UPDATE_FINISH");
             numOfReceivedFinish += 1;
             if (numOfReceivedFinish == children.size() - 1){
                 if (mergeNode != node.nodeUID) {
