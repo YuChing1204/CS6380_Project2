@@ -86,7 +86,7 @@ public class SynchGHS {
         t.start();
     }
 
-    public void sendLeaderReverse() {
+    public void sendLeaderReverse(int recepientId) {
         Runnable runnable = new Runnable() {
             public void run() {
                 try {
@@ -95,7 +95,7 @@ public class SynchGHS {
                     e.printStackTrace();
                 }
 
-                node.sendDirectMessage(message.getSender(), Message.MessageType.GHS_UPDATE_LEADER_REVERSE);
+                node.sendDirectMessage(recepientId, Message.MessageType.GHS_UPDATE_LEADER_REVERSE);
             }
         };
         
@@ -198,7 +198,7 @@ public class SynchGHS {
 
         if (message.getType() == Message.MessageType.GHS_MERGE) {
             mergeNode = -1;
-            if (node.neighbors.contains(String.valueOf(message.getMwoeEdge().get(0))) || node.neighbors.contains(String.valueOf(message.getMwoeEdge().get(1)))) {
+            if (node.neighbors.contains(String.valueOf(mwoe_edge.get(0))) || node.neighbors.contains(String.valueOf(mwoe_edge.get(1)))) {
                 if (mwoe_edge.get(0) == node.nodeUID){
                     mergeNode = mwoe_edge.get(1);
                 } else {
@@ -212,10 +212,10 @@ public class SynchGHS {
 
         if (message.getType() == Message.MessageType.GHS_MERGE_REQUEST) {
             mergeNode = -1;
-            if (message.getMwoeEdge().get(0) == node.nodeUID){
-                mergeNode = message.getMwoeEdge().get(1);
+            if (mwoe_edge.get(0) == node.nodeUID){
+                mergeNode = mwoe_edge.get(1);
             } else {
-                mergeNode = message.getMwoeEdge().get(0);
+                mergeNode = mwoe_edge.get(0);
             }
             if (message.getLeader() != leader && message.getSender() == mergeNode){
                 node.sendDirectMessage(message.getSender(), Message.MessageType.GHS_MERGE_ACCPET);
@@ -229,10 +229,9 @@ public class SynchGHS {
                 if (message.getSender() == mergeNode) {
                     if (leader > message.getLeader()) {
                         children.add(mergeNode);
-                        this.sendLeaderReverse();
-                    } else {
-                        parent = mergeNode;
+                        this.sendLeaderReverse(message.getSender());
                     }
+
                     this.mergeNode = this.node.nodeUID;
                 }
             }
@@ -240,7 +239,7 @@ public class SynchGHS {
         }
 
         if (message.getType() == Message.MessageType.GHS_UPDATE_LEADER_REVERSE) {
-            int oldParent = parent;
+            int oldParent = this.parent;
 
             this.parent = message.getSender();
             this.leader = message.getLeader();
@@ -256,6 +255,10 @@ public class SynchGHS {
 
             if (children.size() != 0) {
                 node.broadcastChildren(Message.MessageType.GHS_UPDATE_LEADER);
+            }
+
+            if (oldParent == -1 && children.size() == 0) {
+                node.sendDirectMessage(this.parent, Message.MessageType.GHS_UPDATE_FINISH_2);
             }
         }
 
