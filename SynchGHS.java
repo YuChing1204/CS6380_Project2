@@ -86,6 +86,23 @@ public class SynchGHS {
         t.start();
     }
 
+    public void sendLeaderReverse() {
+        Runnable runnable = new Runnable() {
+            public void run() {
+                try {
+                    Thread.sleep(10000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                node.sendDirectMessage(message.getSender(), Message.MessageType.GHS_UPDATE_LEADER_REVERSE);
+            }
+        };
+        
+        Thread t = new Thread(runnable);
+        t.start();
+    }
+
     public void runAlgo(Message message){
         System.out.println(message.getType() + "from " + message.getSender());
 
@@ -212,7 +229,7 @@ public class SynchGHS {
                 if (message.getSender() == mergeNode) {
                     if (leader > message.getLeader()) {
                         children.add(mergeNode);
-                        node.sendDirectMessage(message.getSender(), Message.MessageType.GHS_UPDATE_LEADER_REVERSE);
+                        this.sendLeaderReverse();
                     } else {
                         parent = mergeNode;
                     }
@@ -229,7 +246,7 @@ public class SynchGHS {
             this.leader = message.getLeader();
 
             if (children.contains(message.getSender())) {
-                children.remove(message.getSender());
+                children.remove(Integer.valueOf(message.getSender()));
             }
             
             if (oldParent != -1) {
