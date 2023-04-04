@@ -63,15 +63,7 @@ public class SynchGHS {
             node.broadcastChildren(Message.MessageType.MWOE_SEARCH);
         }
 
-        List<String> outgoingNeighbours = new ArrayList<>();
-        for (String neighbour: this.node.neighbors) {
-            int neighborInt = Integer.parseInt(neighbour);
-            if (!children.contains(neighborInt) && neighborInt != parent) {
-                outgoingNeighbours.add(neighbour);
-            }
-        }
-
-        node.broadcast(Message.MessageType.MWOE_TEST, outgoingNeighbours);
+        node.broadcast(Message.MessageType.MWOE_TEST, this.node.neighbors);
     }
 
     public void sendMergeRequest() {
@@ -149,15 +141,13 @@ public class SynchGHS {
                 for (List<Integer> key: test_edges.keySet()) {
                     if (test_edges.get(key) < mwoeWeight) {
                         mwoeWeight = test_edges.get(key);
-                        mwoe_edge = key;
+                        mwoe_edge.addAll(key);
                     }
                 }
 
                 mwoe_edge.add(mwoeWeight);
                 mwoe_edge_list.add(mwoe_edge);
                 numOfReceivedTest = 0;
-
-                System.out.println("mwoeEdge: " + mwoe_edge);
 
                 if (node.nodeUID == leader){
                     if (mwoe_edge.get(0) == node.nodeUID) {
@@ -217,15 +207,19 @@ public class SynchGHS {
 
         if (message.getType() == Message.MessageType.GHS_MERGE_REQUEST) {
             mergeNode = -1;
-            if (mwoe_edge.get(0) == node.nodeUID){
-                mergeNode = mwoe_edge.get(1);
-            } else {
-                mergeNode = mwoe_edge.get(0);
-            }
-            if (message.getLeader() != leader && message.getSender() == mergeNode){
-                node.sendDirectMessage(message.getSender(), Message.MessageType.GHS_MERGE_ACCPET);
-            } else {
-                node.sendDirectMessage(message.getSender(), Message.MessageType.GHS_MERGE_REJECT);
+            
+            if (mwoe_edge.size() != 0) {
+                if (mwoe_edge.get(0) == node.nodeUID){
+                    mergeNode = mwoe_edge.get(1);
+                } else {
+                    mergeNode = mwoe_edge.get(0);
+                }
+                
+                if (message.getLeader() != leader && message.getSender() == mergeNode){
+                    node.sendDirectMessage(message.getSender(), Message.MessageType.GHS_MERGE_ACCPET);
+                } else {
+                    node.sendDirectMessage(message.getSender(), Message.MessageType.GHS_MERGE_REJECT);
+                }
             }
         }
         
