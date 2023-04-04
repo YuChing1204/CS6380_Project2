@@ -44,16 +44,21 @@ public class SynchGHS {
         this.children = new ArrayList<>();
         this.level = 0;
         this.leader = node.nodeUID;
-        this.numOfReceivedTest = 0;
-        this.numOfReceivedComplete = 0;
-        this.numOfReceivedFinish = 0;
-        this.numOfReceivedRoundAck = 0;
-        this.test_edge = new ArrayList<>();
-        this.test_weight = new ArrayList<>();
         this.parent = -1;
     }
 
     public void startSearch() {
+        this.numOfReceivedTest = 0;
+        this.numOfReceivedComplete = 0;
+        this.numOfReceivedFinish = 0;
+        this.numOfReceivedRoundAck = 0;
+
+        this.test_edge = new ArrayList<>();
+        this.test_weight = new ArrayList<>();
+        this.test_edges = new HashMap<>();
+        this.mwoe_edge = new ArrayList<>();
+        this.mwoe_edge_list = new ArrayList<>();
+
         if (children.size() != 0){
             node.broadcastChildren(Message.MessageType.MWOE_SEARCH);
         }
@@ -234,8 +239,20 @@ public class SynchGHS {
 
                     this.mergeNode = this.node.nodeUID;
                 }
+            } else {
+                if (this.parent != -1) {
+                    node.sendDirectMessage(parent, Message.MessageType.GHS_UPDATE_FINISH_2);
+                } else {
+                    this.level += 1;
+
+                    System.out.println("children " + this.children);
+                    System.out.println("parent " + this.parent);
+                    System.out.println("leader " + this.leader);
+                    System.out.println("new level " + this.level);
+
+                    this.startSearch();
+                }
             }
-            System.out.println("leader, parent, children " + leader + ", " + parent + ", " + children);
         }
 
         if (message.getType() == Message.MessageType.GHS_UPDATE_LEADER_REVERSE) {
@@ -298,6 +315,11 @@ public class SynchGHS {
             if (children.size() != 0) {
                 node.broadcastChildren(Message.MessageType.GHS_ROUND_FINISH);
             } else {
+                System.out.println("children " + this.children);
+                System.out.println("parent " + this.parent);
+                System.out.println("leader " + this.leader);
+                System.out.println("new level " + this.level);
+
                 node.sendDirectMessage(this.parent, Message.MessageType.GHS_ROUND_FINISH_ACK);
             }
         }
@@ -305,14 +327,14 @@ public class SynchGHS {
         if (message.getType() == Message.MessageType.GHS_ROUND_FINISH_ACK) {
             this.numOfReceivedRoundAck += 1;
 
+            System.out.println("children " + this.children);
+            System.out.println("parent " + this.parent);
+            System.out.println("leader " + this.leader);
+            System.out.println("new level " + this.level);
+
             if (numOfReceivedRoundAck == children.size()) {
                 if (this.parent != -1) {
                     node.sendDirectMessage(this.parent, Message.MessageType.GHS_ROUND_FINISH_ACK);
-
-                    System.out.println("children " + this.children);
-                    System.out.println("parent " + this.parent);
-                    System.out.println("leader " + this.leader);
-                    System.out.println("new level " + this.level);
                 } else {
                     this.startSearch();
                 }
