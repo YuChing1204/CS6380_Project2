@@ -15,7 +15,7 @@ public class SynchGHS {
     private List<Integer> children;
     private int parent;
     public int level;
-    private int numOfReceivedTest, numOfReceivedComplete, numOfReceivedFinish;
+    private int numOfReceivedTest, numOfReceivedComplete, numOfReceivedFinish, numOfReceivedRoundAck;
     private List<Integer> test_edge;
     private List<Integer> test_weight;
     private HashMap<List<Integer>, Integer> test_edges = new HashMap<>();
@@ -46,6 +46,8 @@ public class SynchGHS {
         this.leader = node.nodeUID;
         this.numOfReceivedTest = 0;
         this.numOfReceivedComplete = 0;
+        this.numOfReceivedFinish = 0;
+        this.numOfReceivedRoundAck = 0;
         this.test_edge = new ArrayList<>();
         this.test_weight = new ArrayList<>();
         this.parent = -1;
@@ -88,12 +90,10 @@ public class SynchGHS {
         System.out.println(message.getType() + "from " + message.getSender());
 
         if (message.getType() == Message.MessageType.MWOE_SEARCH){
-            // System.out.println("message.getType() == Message.MessageType.MWOE_SEARCH");
             this.startSearch();
         }
 
         if (message.getType() == Message.MessageType.MWOE_TEST) {
-            // System.out.println("message.getType() == Message.MessageType.MWOE_TEST");
             if (message.getLeader() == leader) {
                 node.sendDirectMessage(message.getSender(), Message.MessageType.MWOE_TEST_REJECT);
             } else {
@@ -104,9 +104,7 @@ public class SynchGHS {
         if (message.getType() == Message.MessageType.MWOE_TEST_ACCPET || message.getType() == Message.MessageType.MWOE_TEST_REJECT){
             numOfReceivedTest += 1;
             test_edge = new ArrayList<>();
-            // System.out.println("message.getType() == Message.MessageType.MWOE_TEST_ACCPET || message.getType() == Message.MessageType.MWOE_TEST_REJECT");
             if (message.getType() == Message.MessageType.MWOE_TEST_ACCPET){
-                // System.out.println("message.getType() == Message.MessageType.MWOE_TEST_ACCPET");
                 if (message.getSender() > node.nodeUID) {
                     edge = "("+ String.valueOf(node.nodeUID) +","+ String.valueOf(message.getSender()) +")";
                     weight = Integer.parseInt(node.edgesMap.get(edge).get(0));
@@ -121,7 +119,6 @@ public class SynchGHS {
                     test_edges.put(test_edge, weight);
                 }
             }
-            // System.out.println("test_edges: " + test_edges);
 
             if (numOfReceivedTest == node.neighbors.size()){
                 int mwoeWeight = Integer.MAX_VALUE;
@@ -157,7 +154,6 @@ public class SynchGHS {
         }
 
         if (message.getType() == Message.MessageType.MWOE_COMPLETE) {
-            // System.out.println("message.getType() == Message.MessageType.MWOE_COMPLETE");
             int mwoeWeight = Integer.MAX_VALUE;
             numOfReceivedComplete += 1;
             if (message.getMwoeEdge().size() != 0) {
@@ -184,7 +180,6 @@ public class SynchGHS {
         }
 
         if (message.getType() == Message.MessageType.GHS_MERGE) {
-            // System.out.println("message.getType() == Message.MessageType.GHS_MERGE");
             mergeNode = -1;
             if (node.neighbors.contains(String.valueOf(message.getMwoeEdge().get(0))) || node.neighbors.contains(String.valueOf(message.getMwoeEdge().get(1)))) {
                 if (mwoe_edge.get(0) == node.nodeUID){
@@ -199,7 +194,6 @@ public class SynchGHS {
         }
 
         if (message.getType() == Message.MessageType.GHS_MERGE_REQUEST) {
-            // System.out.println("message.getType() == Message.MessageType.GHS_MERGE_REQUEST");
             mergeNode = -1;
             if (message.getMwoeEdge().get(0) == node.nodeUID){
                 mergeNode = message.getMwoeEdge().get(1);
@@ -215,88 +209,94 @@ public class SynchGHS {
         
         if (message.getType() == Message.MessageType.GHS_MERGE_ACCPET || message.getType() == Message.MessageType.GHS_MERGE_REJECT) {
             if (message.getType() == Message.MessageType.GHS_MERGE_ACCPET) {
-                // System.out.println("message.getType() == Message.MessageType.GHS_MERGE_ACCPET");
-                // System.out.println("leader, message.getLeader()" + leader + ", " + message.getLeader());
-                // System.out.println("message.getSender(), mergeNode " + message.getSender() + " , " + mergeNode);
                 if (message.getSender() == mergeNode) {
                     if (leader > message.getLeader()) {
-                        // System.out.println("leader > message.getLeader()");
                         children.add(mergeNode);
                         node.sendDirectMessage(message.getSender(), Message.MessageType.GHS_UPDATE_LEADER_REVERSE);
                     } else {
                         parent = mergeNode;
                     }
+                    this.mergeNode = this.node.nodeUID;
                 }
             }
             System.out.println("leader, parent, children " + leader + ", " + parent + ", " + children);
         }
 
         if (message.getType() == Message.MessageType.GHS_UPDATE_LEADER_REVERSE) {
-            // System.out.println("message.getType() == Message.MessageType.GHS_UPDATE_LEADER_REVERSE");
-            mergeNode = node.nodeUID;
-            if (leader != node.nodeUID) {
-                // System.out.println("leader != node.nodeUID");
-                leader = message.getLeader();
-                if (children.contains(message.getSender())) {
-                    children.remove(message.getSender());
-                }
-                node.sendDirectMessage(parent, Message.MessageType.GHS_UPDATE_LEADER_REVERSE);
-                if (children.size() != 0) {
-                    node.broadcastChildren(Message.MessageType.GHS_UPDATE_LEADER);
-                }
-                children.add(parent);
-                parent = message.getSender();
-            } else {
-                // System.out.println("leader = node.nodeUID");
-                // System.out.println("children: " + children);
-                leader = message.getLeader();
-                parent = message.getSender();
+            int oldParent = parent;
 
-                if (children.contains(message.getSender())) {
-                    children.remove(message.getSender());
-                }
-                if (children.size() != 0) {
-                    // System.out.println("children.size() != 0");
-                    node.broadcastChildren(Message.MessageType.GHS_UPDATE_LEADER);
-                } else {
-                    // System.out.println("children.size() = 0");
-                    // System.out.println("mergeNode, node.nodeUID " + mergeNode + ", " + node.nodeUID);
-                    // System.out.println("parent: " + parent);
-                    if (mergeNode == node.nodeUID) {
-                        // System.out.println("mergeNode == node.nodeUID");
-                        node.sendDirectMessage(parent, Message.MessageType.GHS_ROUND_FINISH);
-                    }
-                }
+            this.parent = message.getSender();
+            this.leader = message.getLeader();
+
+            if (children.contains(message.getSender())) {
+                children.remove(message.getSender());
+            }
+            
+            if (oldParent != -1) {
+                children.add(oldParent);
+                node.sendDirectMessage(oldParent, Message.MessageType.GHS_UPDATE_LEADER_REVERSE);
+            }
+
+            if (children.size() != 0) {
+                node.broadcastChildren(Message.MessageType.GHS_UPDATE_LEADER);
             }
         }
 
         if (message.getType() == Message.MessageType.GHS_UPDATE_LEADER) {
-            // System.out.println("message.getType() == Message.MessageType.GHS_UPDATE_LEADER");
-            leader = message.getLeader();
+            this.leader = message.getLeader();
+
             if (children.size() != 0) {
                 node.broadcastChildren(Message.MessageType.GHS_UPDATE_LEADER);
             } else {
-                node.sendDirectMessage(parent, Message.MessageType.GHS_UPDATE_FINISH);
+                node.sendDirectMessage(parent, Message.MessageType.GHS_UPDATE_FINISH_1);
             }
         }
 
-        if (message.getType() == Message.MessageType.GHS_UPDATE_FINISH) {
-            // System.out.println("message.getType() == Message.MessageType.GHS_UPDATE_FINISH");
+        if (message.getType() == Message.MessageType.GHS_UPDATE_FINISH_1) {
             numOfReceivedFinish += 1;
-            if (numOfReceivedFinish == children.size() - 1){
+            if (numOfReceivedFinish == children.size()) {
                 if (mergeNode != node.nodeUID) {
-                    node.sendDirectMessage(parent, Message.MessageType.GHS_UPDATE_FINISH);
+                    node.sendDirectMessage(parent, Message.MessageType.GHS_UPDATE_FINISH_1);
                 } else {
-                    node.sendDirectMessage(parent, Message.MessageType.GHS_ROUND_FINISH);
+                    node.sendDirectMessage(parent, Message.MessageType.GHS_UPDATE_FINISH_2);
                 }
             }
         }
 
-        if (message.getType() == Message.MessageType.GHS_ROUND_FINISH) {
-            System.out.println("round finish");
-            System.out.println("children" + children);
+        if (message.getType() == Message.MessageType.GHS_UPDATE_FINISH_2) {
+            if (this.parent != -1) {
+                node.sendDirectMessage(this.parent, Message.MessageType.GHS_UPDATE_FINISH_2);
+            } else {
+                this.level += 1;
+                node.broadcastChildren(Message.MessageType.GHS_ROUND_FINISH);
+            }
         }
-        
+
+        if (message.getType() == Message.MessageType.GHS_ROUND_FINISH) {
+            this.level += 1;
+
+            if (children.size() != 0) {
+                node.broadcastChildren(Message.MessageType.GHS_ROUND_FINISH);
+            } else {
+                node.sendDirectMessage(this.parent, Message.MessageType.GHS_ROUND_FINISH_ACK);
+            }
+        }
+
+        if (message.getType() == Message.MessageType.GHS_ROUND_FINISH_ACK) {
+            this.numOfReceivedRoundAck += 1;
+
+            if (numOfReceivedRoundAck == children.size()) {
+                if (this.parent != -1) {
+                    node.sendDirectMessage(this.parent, Message.MessageType.GHS_ROUND_FINISH_ACK);
+
+                    System.out.println("children " + this.children);
+                    System.out.println("parent " + this.parent);
+                    System.out.println("leader " + this.leader);
+                    System.out.println("new level " + this.level);
+                } else {
+                    this.startSearch();
+                }
+            }
+        }
     }
-    
 }

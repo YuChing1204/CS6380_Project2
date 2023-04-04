@@ -25,8 +25,10 @@ public class Message implements Serializable {
         GHS_MERGE_REJECT,
         GHS_UPDATE_LEADER_REVERSE,
         GHS_UPDATE_LEADER,
-        GHS_UPDATE_FINISH,
-        GHS_ROUND_FINISH
+        GHS_UPDATE_FINISH_1,
+        GHS_UPDATE_FINISH_2,
+        GHS_ROUND_FINISH,
+        GHS_ROUND_FINISH_ACK
     }
 
     public MessageType getType() {
