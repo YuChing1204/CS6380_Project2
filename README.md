@@ -1,6 +1,6 @@
 # CS6380_Project2
 
-## Team Member: yxc210017 Yu-Ching Chang | nxv210002 Naga Sri Harsha Vadrevu | sms170005 Sayana Sabu
+## Team Members: yxc210017 Yu-Ching Chang | nxv210002 Naga Sri Harsha Vadrevu | sms170005 Sayana Sabu
 
 ### Step 1:
 Connect to the DC machines
