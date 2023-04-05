@@ -10,7 +10,7 @@ import java.util.Scanner; // Import the Scanner class to read text files
 
 public class ReadFile {
 
-  public static List<HashMap<String, List<String>>> readConfig() {
+  public static List<HashMap<String, List<String>>> readConfig(String path) {
 
     Integer numOfNode = 0;
     Integer numOfNeighbor;
@@ -28,7 +28,7 @@ public class ReadFile {
     List<HashMap<String, List<String>>> infoMapList = new ArrayList<>();
     
     try {
-      File myObj = new File("config.txt");
+      File myObj = new File(path);
       Scanner myReader = new Scanner(myObj);
       Integer index = 0;
       Integer count = 0;

@@ -65,9 +65,9 @@ class Node {
 	}
 
 	public Node(String[] args) {
-		List<HashMap<String, List<String>>> infoMapList = ReadFile.readConfig();
+		List<HashMap<String, List<String>>> infoMapList = ReadFile.readConfig(args[0]);
 		NodeLookup nodeLookup = new NodeLookup(infoMapList.get(0), infoMapList.get(1), infoMapList.get(2));
-		nodeUID = Integer.parseInt(args[0]);
+		nodeUID = Integer.parseInt(args[1]);
 		myHostName = nodeLookup.getHostName(String.valueOf(nodeUID));
 		myPort = nodeLookup.getPort(String.valueOf(nodeUID));
 		neighbors = nodeLookup.getNeighbors(String.valueOf(nodeUID));
